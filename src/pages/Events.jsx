@@ -95,7 +95,7 @@ const EventsPage = () => {
             if (newStatus) body.orderStatus = newStatus;
             if (newPaymentStatus) body.paymentStatus = newPaymentStatus;
 
-            const res = await axios.patch(`${ORDER_API}/${orderId}/status`, body);
+            await axios.patch(`${ORDER_API}/${orderId}/status`, body);
             
             setOrders(orders.map(o => o._id === orderId ? { 
                 ...o, 
