@@ -78,7 +78,7 @@ const EventsPage = () => {
             }
         };
         fetchOrders();
-    }, []);
+    }, [ORDER_API]);
 
     useEffect(() => {
         if (statusParam) {
@@ -96,7 +96,6 @@ const EventsPage = () => {
             if (newPaymentStatus) body.paymentStatus = newPaymentStatus;
 
             const res = await axios.patch(`${ORDER_API}/${orderId}/status`, body);
-            const updatedOrder = res.data.order || res.data;
             
             setOrders(orders.map(o => o._id === orderId ? { 
                 ...o, 

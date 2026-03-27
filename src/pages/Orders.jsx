@@ -15,10 +15,6 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle,
-  FileDown,
-  ExternalLink,
-  MapPin,
-  Phone,
   Mail,
   IndianRupee,
   MessageCircle
@@ -81,7 +77,7 @@ const Orders = () => {
             }
         };
         fetchOrders();
-    }, []);
+    }, [ORDER_API]);
 
     useEffect(() => {
         if (statusParam) {
@@ -99,8 +95,6 @@ const Orders = () => {
             if (newPaymentStatus) body.paymentStatus = newPaymentStatus;
 
             const res = await axios.patch(`${ORDER_API}/${orderId}/status`, body);
-            // The API returns { order: ... }
-            const updatedOrder = res.data.order || res.data;
             
             setOrders(orders.map(o => o._id === orderId ? { 
                 ...o, 

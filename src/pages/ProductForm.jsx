@@ -8,15 +8,9 @@ import {
   Upload, 
   Package, 
   ChevronLeft,
-  Type,
-  Layout,
   Globe,
   Layers,
-  Search,
-  Check,
   IndianRupee,
-  Sparkles,
-  Settings,
   Info
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -32,7 +26,7 @@ const ProductForm = () => {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [images, setImages] = useState([]); // General images (Files)
-    const [variantImages, setVariantImages] = useState({}); // { "Color-Size": [Files] }
+    const [variantImages] = useState({}); // { "Color-Size": [Files] }
     
     const [product, setProduct] = useState({
       title: "",

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useLocation } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import { } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Layout = ({ children }) => {

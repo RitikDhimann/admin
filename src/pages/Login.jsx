@@ -31,7 +31,9 @@ const AdminLogin = () => {
             toast.success("Welcome, Commander! ✨");
             navigate(from, { replace: true });
         } catch (err) {
-            toast.error(err.response?.data?.message || "Login failed. Check your magic key.");
+            console.error("Login component error:", err);
+            const errorMessage = err.response?.data?.message || err.message || "Login failed. Check your magic key.";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }

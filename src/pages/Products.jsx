@@ -9,19 +9,14 @@ import {
   Store, 
   IndianRupee, 
   Info, 
-  FileText, 
   Tag, 
   Layers, 
-  Tags, 
   Image, 
   Package, 
-  Globe,
   Search,
   Filter,
   ChevronLeft,
   ChevronRight,
-  MoreVertical,
-  Star,
   AlertCircle
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';

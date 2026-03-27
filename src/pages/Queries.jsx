@@ -12,8 +12,7 @@ import {
   Phone, 
   Mail,
   AlertCircle,
-  Eye,
-  ArrowUpDown
+  Eye
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 

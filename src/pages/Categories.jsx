@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { Plus, Trash2, Edit, Search, Layers, Image as ImageIcon, CheckCircle2, AlertCircle, MoreVertical, ChevronRight, Package, Clock, ExternalLink, X, Check, Eye as EyeIcon, LayoutGrid, List } from "lucide-react";
+import { Plus, Trash2, Edit, Search, Layers, CheckCircle2, Package, ExternalLink, X, Check, Eye as EyeIcon, LayoutGrid, List } from "lucide-react";
 
 import { API_BASE } from "../config";
 
