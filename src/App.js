@@ -15,10 +15,10 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('adminToken');
-  const user = JSON.parse(localStorage.getItem('adminUser') || '{}');
+  const user = JSON.parse(localStorage.getItem('adminUser') || 'null');
   const location = useLocation();
 
-  if (!token || (user && user.role !== 'admin')) {
+  if (!token || !user || user.role !== 'admin') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
