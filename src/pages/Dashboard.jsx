@@ -9,8 +9,7 @@ import {
   Package,
   Clock,
   CheckCircle,
-  AlertCircle,
-  Sparkles
+  AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -141,17 +140,6 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="space-y-6">
-          <div className="bg-brand-brown rounded-3xl p-6 text-white shadow-xl shadow-brand-brown/10 relative overflow-hidden group">
-            <div className="relative z-10">
-              <h2 className="text-xl font-black mb-2">Need help?</h2>
-              <p className="text-white/70 text-sm mb-6 font-medium">Check our documentation or contact support for help with Propz Admin.</p>
-              <button className="w-full py-3 rounded-xl bg-white text-brand-brown font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-colors">
-                Contact Support
-              </button>
-            </div>
-            <Sparkles className="absolute -right-4 -bottom-4 text-white/5 group-hover:scale-125 transition-transform duration-500" size={160} />
-          </div>
-
           <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
              <h2 className="text-lg font-black text-slate-800 tracking-tight mb-4">Store Overview</h2>
              <div className="space-y-4">

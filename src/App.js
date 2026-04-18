@@ -10,6 +10,7 @@ import ProductForm from './pages/ProductForm';
 import Coupons from './pages/Coupons';
 import AdminLogin from './pages/Login';
 import QueriesPage from './pages/Queries';
+import ReviewsPage from './pages/Reviews';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -46,6 +47,7 @@ function App() {
                   <Route path="add-product" element={<ProductForm />} />
                   <Route path="coupons" element={<Coupons />} />
                   <Route path="queries" element={<QueriesPage />} />
+                  <Route path="reviews" element={<ReviewsPage />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

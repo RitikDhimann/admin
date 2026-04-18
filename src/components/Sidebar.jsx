@@ -13,7 +13,8 @@ import {
   X,
   LogOut,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,6 +35,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobile, onClose }) => {
     { name: 'Add Product', icon: PlusSquare, path: '/add-product' },
     { name: 'Coupons', icon: Ticket, path: '/coupons' },
     { name: 'Queries', icon: MessageSquare, path: '/queries' },
+    { name: 'Reviews', icon: Star, path: '/reviews' },
   ];
 
   return (
