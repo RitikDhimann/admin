@@ -45,6 +45,14 @@ const CategoryCard = ({ category, onEdit, onDelete, onViewProducts }) => {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
                         ID: {category._id.slice(-6).toUpperCase()}
                     </span>
+                    {category.parent && (
+                        <span className="text-[10px] font-bold text-brand-primary uppercase tracking-widest bg-brand-primary/10 px-2 py-0.5 rounded-md">
+                            Parent: {category.parent.name || "N/A"}
+                        </span>
+                    )}
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">
+                        {category.type || 'product'}
+                    </span>
                     <span className="w-1 h-1 rounded-full bg-slate-300" />
                     <span className="text-[10px] font-black text-brand-primary uppercase tracking-widest">
                         {category.products?.length || 0} Products
@@ -67,7 +75,7 @@ const CategoriesPage = () => {
     const [viewCategory, setViewCategory] = useState(null);
     const [isEdit, setIsEdit] = useState(false);
     const [currentCategoryId, setCurrentCategoryId] = useState(null);
-    const [newCategory, setNewCategory] = useState({ name: "", products: [] });
+    const [newCategory, setNewCategory] = useState({ name: "", products: [], parent: "", type: "product" });
     const [viewMode, setViewMode] = useState("grid"); // "grid" or "table"
 
 
@@ -195,7 +203,7 @@ const CategoriesPage = () => {
                         onClick={() => {
                             setIsEdit(false);
                             setCurrentCategoryId(null);
-                            setNewCategory({ name: "", products: [] });
+                            setNewCategory({ name: "", products: [], parent: "", type: "product" });
                             setShowModal(true);
                         }}
                         className="btn-bubbly bg-slate-900 text-white shadow-slate-900/20 flex items-center gap-2"
@@ -308,7 +316,12 @@ const CategoriesPage = () => {
                                                     onClick={() => {
                                                         setIsEdit(true);
                                                         setCurrentCategoryId(cat._id);
-                                                        setNewCategory({ name: cat.name, products: cat.products.map(p => p._id) });
+                                                        setNewCategory({ 
+                                                            name: cat.name, 
+                                                            products: cat.products.map(p => p._id),
+                                                            parent: cat.parent?._id || "",
+                                                            type: cat.type || "product"
+                                                        });
                                                         setShowModal(true);
                                                     }}
                                                     className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-brand-primary hover:text-white transition-all"
@@ -403,6 +416,42 @@ const CategoriesPage = () => {
                                     className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-2 focus:ring-brand-primary/20 transition-all outline-none"
                                     required
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Parent Category (Optional)</label>
+                                <select
+                                    value={newCategory.parent}
+                                    onChange={(e) => setNewCategory({ ...newCategory, parent: e.target.value })}
+                                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-black text-slate-800 focus:ring-2 focus:ring-brand-primary/20 transition-all outline-none appearance-none"
+                                >
+                                    <option value="">None (Top Level)</option>
+                                    {categories.filter(c => c._id !== currentCategoryId).map(c => (
+                                        <option key={c._id} value={c._id}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Category Type</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewCategory({ ...newCategory, type: "product" })}
+                                        className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${newCategory.type === 'product' ? 'bg-brand-primary/5 border-brand-primary' : 'bg-white border-slate-100 hover:border-slate-200'}`}
+                                    >
+                                        <Package size={24} className={newCategory.type === 'product' ? 'text-brand-primary' : 'text-slate-400'} />
+                                        <span className={`text-xs font-black uppercase tracking-wider ${newCategory.type === 'product' ? 'text-brand-primary' : 'text-slate-400'}`}>Product Type</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewCategory({ ...newCategory, type: "occasion" })}
+                                        className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${newCategory.type === 'occasion' ? 'bg-brand-primary/5 border-brand-primary' : 'bg-white border-slate-100 hover:border-slate-200'}`}
+                                    >
+                                        <Layers size={24} className={newCategory.type === 'occasion' ? 'text-brand-primary' : 'text-slate-400'} />
+                                        <span className={`text-xs font-black uppercase tracking-wider ${newCategory.type === 'occasion' ? 'text-brand-primary' : 'text-slate-400'}`}>Occasion</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
