@@ -64,7 +64,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobile, onClose }) => {
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-4 space-y-2 mt-4">
+      <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
