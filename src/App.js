@@ -11,6 +11,7 @@ import Coupons from './pages/Coupons';
 import AdminLogin from './pages/Login';
 import QueriesPage from './pages/Queries';
 import ReviewsPage from './pages/Reviews';
+import Banners from './pages/Banners';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -48,6 +49,7 @@ function App() {
                   <Route path="coupons" element={<Coupons />} />
                   <Route path="queries" element={<QueriesPage />} />
                   <Route path="reviews" element={<ReviewsPage />} />
+                  <Route path="banners" element={<Banners />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>
