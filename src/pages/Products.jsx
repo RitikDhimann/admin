@@ -70,7 +70,7 @@ const ProductTable = () => {
 
     // Calculate pagination for filtered products
     const filteredProducts = products.filter(p => {
-      const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.vendor && p.vendor.toLowerCase().includes(searchTerm.toLowerCase()));
       
       let matchesStock = true;
