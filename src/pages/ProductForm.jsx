@@ -135,22 +135,26 @@ const ProductForm = () => {
     const handleSizeKeyDown = (e, colorId) => {
         if (e.key === "Enter" && e.target.value.trim()) {
             e.preventDefault();
-            const size = e.target.value.trim().toUpperCase();
-            const color = product.colors.find((c) => c.id === colorId);
-            if (!color || !color.name) {
-                alert("Please enter color name first");
-                return;
-            }
-            setProduct((p) => ({
-                ...p,
-                colors: p.colors.map((c) =>
-                    c.id === colorId
-                        ? { ...c, sizes: c.sizes.includes(size) ? c.sizes : [...c.sizes, size] }
-                        : c
-                ),
-            }));
+            addSize(colorId, e.target.value.trim());
             e.target.value = "";
         }
+    };
+
+    const addSize = (colorId, sizeInput) => {
+        const size = sizeInput.toUpperCase();
+        const color = product.colors.find((c) => c.id === colorId);
+        if (!color || !color.name) {
+            alert("Please enter color name first");
+            return;
+        }
+        setProduct((p) => ({
+            ...p,
+            colors: p.colors.map((c) =>
+                c.id === colorId
+                    ? { ...c, sizes: c.sizes.includes(size) ? c.sizes : [...c.sizes, size] }
+                    : c
+            ),
+        }));
     };
 
     const removeSizeFromColor = (colorId, size) => {
@@ -163,30 +167,55 @@ const ProductForm = () => {
         }));
     };
 
-    const addVariantsForColor = (colorId) => {
+    const addVariantsForColor = (colorId, currentInputValue) => {
         const color = product.colors.find((c) => c.id === colorId);
-        if (!color || !color.name || color.sizes.length === 0) return;
+        if (!color || !color.name) return;
 
-        color.sizes.forEach((size) => {
-            const key = `${color.name}-${size}`;
-            if (processedCombos.current.has(key)) return;
+        // If there's pending text in the input, add it as a size first
+        let currentSizes = [...color.sizes];
+        if (currentInputValue && currentInputValue.trim()) {
+            const newSize = currentInputValue.trim().toUpperCase();
+            if (!currentSizes.includes(newSize)) {
+                currentSizes.push(newSize);
+                // Also update the color object so the tag appears
+                setProduct(p => ({
+                    ...p,
+                    colors: p.colors.map(c => c.id === colorId ? { ...c, sizes: currentSizes } : c)
+                }));
+            }
+        }
 
-            setProduct((p) => ({
-                ...p,
-                variants: [
-                    ...p.variants,
-                    {
+        if (currentSizes.length === 0) {
+            alert("Please add at least one size (type and press Enter)");
+            return;
+        }
+
+        setProduct((p) => {
+            const newVariants = [...p.variants];
+            let addedCount = 0;
+
+            currentSizes.forEach((size) => {
+                const key = `${color.name}-${size}`;
+                if (!newVariants.some(v => v.variantKey === key)) {
+                    newVariants.push({
                         color: color.name,
                         size,
                         variantKey: key,
-                        price: 0,
+                        price: p.basePrice || 0,
                         compareAtPrice: 0,
-                        sku: "",
-                        inventoryQty: 0,
-                    },
-                ],
-            }));
-            processedCombos.current.add(key);
+                        sku: `SS-${color.name.slice(0, 2).toUpperCase()}-${size}-${Date.now().toString().slice(-4)}`,
+                        inventoryQty: p.baseInventory || 0,
+                    });
+                    addedCount++;
+                }
+            });
+
+            if (addedCount === 0) {
+                alert("All variants for this color already exist!");
+                return p;
+            }
+
+            return { ...p, variants: newVariants };
         });
     };
 
@@ -408,14 +437,14 @@ const ProductForm = () => {
                                 </div>
                                 <div className="grid grid-cols-4 gap-4">
                                     {(images || []).map((file, i) => (
-                                        <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100">
+                                        <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group">
                                             <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
                                             <button 
                                                 type="button"
                                                 onClick={() => setImages((images || []).filter((_, idx) => idx !== i))}
-                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition-all z-10"
                                             >
-                                                <X size={14} />
+                                                <X size={14} strokeWidth={3} />
                                             </button>
                                         </div>
                                     ))}
@@ -428,9 +457,9 @@ const ProductForm = () => {
                                                     const newImages = product.images.filter((_, idx) => idx !== i);
                                                     setProduct(prev => ({ ...prev, images: newImages }));
                                                 }}
-                                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition-all z-10"
                                             >
-                                                <X size={14} />
+                                                <X size={14} strokeWidth={3} />
                                             </button>
                                         </div>
                                     ))}
@@ -471,23 +500,43 @@ const ProductForm = () => {
                                                     <Trash2 size={20} />
                                                 </button>
                                             </div>
-                                            <input
-                                                type="text"
-                                                placeholder="Type size and press Enter (e.g. S, M, L)"
-                                                onKeyDown={(e) => handleSizeKeyDown(e, color.id)}
-                                                className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-xs font-medium"
-                                            />
+                                            <div className="relative group/size">
+                                                <input
+                                                    type="text"
+                                                    id={`size-input-${color.id}`}
+                                                    placeholder="Type size and press Enter (e.g. S, M, L)"
+                                                    onKeyDown={(e) => handleSizeKeyDown(e, color.id)}
+                                                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-xs font-medium pr-16"
+                                                />
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const input = document.getElementById(`size-input-${color.id}`);
+                                                        if (input.value.trim()) {
+                                                            addSize(color.id, input.value.trim());
+                                                            input.value = "";
+                                                        }
+                                                    }}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-brand-primary hover:bg-brand-primary/10 rounded-xl transition-all"
+                                                >
+                                                    <Plus size={18} />
+                                                </button>
+                                            </div>
                                             <div className="flex flex-wrap gap-2">
                                                 {(color.sizes || []).map(size => (
                                                     <span key={size} className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
-                                                        {size} <X size={12} className="cursor-pointer text-slate-300" onClick={() => removeSizeFromColor(color.id, size)} />
+                                                        {size} <X size={12} className="cursor-pointer text-slate-300 hover:text-red-500" onClick={() => removeSizeFromColor(color.id, size)} />
                                                     </span>
                                                 ))}
                                             </div>
                                             <button 
                                                 type="button" 
-                                                onClick={() => addVariantsForColor(color.id)}
-                                                className="w-full py-3 bg-slate-900/10 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all"
+                                                onClick={() => {
+                                                    const input = document.getElementById(`size-input-${color.id}`);
+                                                    addVariantsForColor(color.id, input.value);
+                                                    input.value = "";
+                                                }}
+                                                className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-slate-900/20"
                                             >
                                                 Generate Variants for {color.name || 'this color'}
                                             </button>
@@ -500,8 +549,20 @@ const ProductForm = () => {
                                 <h3 className="text-lg font-black text-slate-800 tracking-tight px-4">Active Variants</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {(product.variants || []).map((v, i) => (
-                                        <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4">
-                                            <div className="flex justify-between font-black text-slate-800">
+                                        <div key={i} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-4 relative group/v">
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    setProduct(p => ({
+                                                        ...p,
+                                                        variants: p.variants.filter((_, idx) => idx !== i)
+                                                    }));
+                                                }}
+                                                className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <div className="flex justify-between font-black text-slate-800 pr-8">
                                                 <span className="text-xs uppercase">{v.color} / {v.size}</span>
                                                 <span className="text-[10px] text-slate-300">{v.sku || 'NO SKU'}</span>
                                             </div>

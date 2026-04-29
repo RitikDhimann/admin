@@ -17,8 +17,10 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  UploadCloud
 } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 
@@ -39,6 +41,8 @@ const ProductTable = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const stockParam = searchParams.get('stock');
     const [stockFilter, setStockFilter] = useState(stockParam || 'all');
+    const [importing, setImporting] = useState(false);
+    const fileInputRef = React.useRef(null);
 
     // Fetch products from API
     useEffect(() => {
@@ -127,12 +131,41 @@ const ProductTable = () => {
             setIsDeleteModalOpen(false);
             setProductToDelete(null);
             setIsDeleting(false);
+            toast.success("Product deleted successfully");
         } catch (err) {
             console.error("Delete error:", err);
             setError('Failed to delete product. Please try again.');
             setIsDeleteModalOpen(false);
             setProductToDelete(null);
             setIsDeleting(false);
+        }
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            setImporting(true);
+            const response = await axios.post(`${API_BASE}/products/upload`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            toast.success(response.data.message || "Imported successfully!");
+            // Refresh products
+            const refreshResponse = await axios.get(`${API_BASE}/products/all`);
+            setProducts(refreshResponse.data?.products);
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Import failed");
+        } finally {
+            setImporting(false);
+            e.target.value = ''; // Reset input
         }
     };
 
@@ -196,6 +229,25 @@ const ProductTable = () => {
                         <option value="out-of-stock">Out of Stock</option>
                       </select>
                     </div>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                        accept=".csv, .xlsx, .xls"
+                    />
+                    <button
+                        onClick={handleImportClick}
+                        disabled={importing}
+                        className="btn-bubbly bg-white border border-slate-200 text-slate-600 flex items-center gap-2"
+                    >
+                        {importing ? (
+                            <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                            <UploadCloud size={20} />
+                        )}
+                        Import CSV/Excel
+                    </button>
                     <Link
                         to="/add-product"
                         className="btn-bubbly bg-slate-900 text-white shadow-slate-900/20 flex items-center gap-2 whitespace-nowrap"

@@ -5,14 +5,14 @@ import {
   Package, 
   ShoppingCart, 
   Layers, 
-  PlusSquare, 
+ 
   ChevronLeft, 
   ChevronRight,
   Sparkles,
   Ticket,
   X,
   LogOut,
-  Calendar,
+
   MessageSquare,
   Star,
   Megaphone
@@ -31,9 +31,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobile, onClose }) => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Products', icon: Package, path: '/products' },
     { name: 'Orders', icon: ShoppingCart, path: '/orders' },
-    { name: 'Events', icon: Calendar, path: '/events' },
     { name: 'Categories', icon: Layers, path: '/categories' },
-    { name: 'Add Product', icon: PlusSquare, path: '/add-product' },
     { name: 'Coupons', icon: Ticket, path: '/coupons' },
     { name: 'Queries', icon: MessageSquare, path: '/queries' },
     { name: 'Reviews', icon: Star, path: '/reviews' },

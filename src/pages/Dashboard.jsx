@@ -9,9 +9,11 @@ import {
   Package,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  UploadCloud
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const StatCard = ({ title, value, icon: Icon, trend, color }) => (
   <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
@@ -33,6 +35,8 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 const Dashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -47,6 +51,31 @@ const Dashboard = () => {
     };
     fetchStats();
   }, []);
+
+  const handleImportClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      setImporting(true);
+      const response = await axios.post(`${API_BASE}/products/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(response.data.message || "Imported successfully!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Import failed");
+    } finally {
+      setImporting(false);
+      e.target.value = ''; // Reset input
+    }
+  };
 
   if (loading) {
     return (
@@ -88,10 +117,31 @@ const Dashboard = () => {
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">Dashboard</h1>
           <p className="text-slate-500 font-medium">Welcome back, Admin! Here's what's happening today.</p>
         </div>
-        <button className="btn-bubbly bg-slate-900 text-white shadow-slate-900/20">
-          <TrendingUp size={18} className="inline mr-2" />
-          Download Report
-        </button>
+        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            accept=".csv, .xlsx, .xls"
+          />
+          <button 
+            onClick={handleImportClick}
+            disabled={importing}
+            className="btn-bubbly bg-white border border-slate-200 text-slate-600 flex items-center gap-2"
+          >
+            {importing ? (
+              <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <UploadCloud size={18} />
+            )}
+            Import CSV
+          </button>
+          <button className="btn-bubbly bg-slate-900 text-white shadow-slate-900/20">
+            <TrendingUp size={18} className="inline mr-2" />
+            Download Report
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
