@@ -14,6 +14,7 @@ import {
   Info
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import { API_BASE, BASE_URL } from "../config";
 
@@ -26,7 +27,8 @@ const ProductForm = () => {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [images, setImages] = useState([]); // General images (Files)
-    const [variantImages] = useState({}); // { "Color-Size": [Files] }
+    const [variantImages, setVariantImages] = useState({}); // { "Color-Size": [Files] }
+    const [colorImages, setColorImages] = useState({}); // { "ColorName": [Files] }
     
     const [product, setProduct] = useState({
       title: "",
@@ -107,20 +109,54 @@ const ProductForm = () => {
         setProduct((p) => ({ ...p, tags: p.tags.filter((t) => t !== tag) }));
     };
 
-    // Color/Size/Variant Handlers (from original logic)
-    const addColor = () => {
-        setProduct((p) => ({
-            ...p,
-            colors: [...p.colors, { id: Date.now().toString(), name: "", hex: "#000000", sizes: [] }],
+    const handleVariantImageChange = (variantKey, files) => {
+        setVariantImages(prev => ({
+            ...prev,
+            [variantKey]: [...(prev[variantKey] || []), ...Array.from(files)]
         }));
     };
 
-    const updateColor = (id, field, value) => {
-        setProduct((p) => ({
-            ...p,
-            colors: p.colors.map((c) => c.id === id ? { ...c, [field]: value } : c),
+    const removeVariantImage = (variantKey, index) => {
+        setVariantImages(prev => ({
+            ...prev,
+            [variantKey]: prev[variantKey].filter((_, i) => i !== index)
         }));
     };
+
+    const removeExistingVariantImage = (variantKey, index) => {
+        setProduct(p => ({
+            ...p,
+            variantImages: p.variantImages.map(vi => 
+                vi.variant === variantKey 
+                ? { ...vi, images: vi.images.filter((_, i) => i !== index) }
+                : vi
+            )
+        }));
+    };
+
+    const handleColorImageChange = (colorName, files) => {
+        setColorImages(prev => ({
+            ...prev,
+            [colorName]: [...(prev[colorName] || []), ...Array.from(files)]
+        }));
+    };
+
+    const removeColorImage = (colorName, index) => {
+        setColorImages(prev => ({
+            ...prev,
+            [colorName]: prev[colorName].filter((_, i) => i !== index)
+        }));
+    };
+
+    // Color/Size/Variant Handlers (from original logic)
+    const addColor = () => {
+        const colorName = prompt("Enter Color Name (e.g. Red, Blue, Original):") || "Standard";
+        setProduct((p) => ({
+            ...p,
+            colors: [...p.colors, { id: Date.now().toString(), name: colorName, hex: "#000000", sizes: [] }],
+        }));
+    };
+
 
     const removeColor = (id) => {
         const color = product.colors.find((c) => c.id === id);
@@ -211,11 +247,17 @@ const ProductForm = () => {
             });
 
             if (addedCount === 0) {
-                alert("All variants for this color already exist!");
+                toast.info("All variants for this color already exist!");
                 return p;
             }
 
-            return { ...p, variants: newVariants };
+            toast.success(`Generated ${addedCount} variants for ${color.name}! ✨`);
+            return { 
+                ...p, 
+                variants: newVariants,
+                // Remove the color definition card after generation to keep the UI clean
+                colors: p.colors.filter(c => c.id !== colorId)
+            };
         });
     };
 
@@ -262,6 +304,18 @@ const ProductForm = () => {
         images.forEach((file) => formData.append("general", file));
         Object.entries(variantImages).forEach(([variantKey, files]) => {
             files.forEach((file) => formData.append(`variant-${variantKey}`, file));
+        });
+
+        // Handle Color Group Images (propagate to variants of that color if they don't have specific images)
+        Object.entries(colorImages).forEach(([colorName, files]) => {
+            const colorVariants = finalVariants.filter(v => v.color === colorName);
+            colorVariants.forEach(v => {
+                const variantKey = v.variantKey || `${v.color}-${v.size}`;
+                // Only send if this variant doesn't have its own specific images
+                if (!variantImages[variantKey] || variantImages[variantKey].length === 0) {
+                   files.forEach((file) => formData.append(`variant-${variantKey}`, file));
+                }
+            });
         });
 
         try {
@@ -438,7 +492,7 @@ const ProductForm = () => {
                                 <div className="grid grid-cols-4 gap-4">
                                     {(images || []).map((file, i) => (
                                         <div key={i} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group">
-                                            <img src={URL.createObjectURL(file)} alt="" className="w-full h-full object-cover" />
+                                            <img src={URL.createObjectURL(file)} alt="gallery preview" className="w-full h-full object-cover" />
                                             <button 
                                                 type="button"
                                                 onClick={() => setImages((images || []).filter((_, idx) => idx !== i))}
@@ -450,7 +504,7 @@ const ProductForm = () => {
                                     ))}
                                     {isEdit && (product.images || []).map((img, i) => (
                                         <div key={`existing-${i}`} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group">
-                                            <img src={img.src.startsWith('http') ? img.src : `${BASE_URL}${img.src}`} alt="" className="w-full h-full object-cover" />
+                                            <img src={img.src.startsWith('http') ? img.src : `${BASE_URL}${img.src}`} alt="gallery" className="w-full h-full object-cover" />
                                             <button 
                                                 type="button"
                                                 onClick={() => {
@@ -482,23 +536,56 @@ const ProductForm = () => {
                                 <div className="space-y-6">
                                     {(product.colors || []).map((color) => (
                                         <div key={color.id} className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Color Name (e.g. Red)"
-                                                    value={color.name}
-                                                    onChange={(e) => updateColor(color.id, "name", e.target.value)}
-                                                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl text-sm font-black"
-                                                />
-                                                <input
-                                                    type="color"
-                                                    value={color.hex}
-                                                    onChange={(e) => updateColor(color.id, "hex", e.target.value)}
-                                                    className="w-full h-full min-h-[50px] bg-white border border-slate-200 rounded-2xl cursor-pointer"
-                                                />
-                                                <button type="button" onClick={() => removeColor(color.id)} className="text-red-400 hover:text-red-500 flex justify-center items-center">
-                                                    <Trash2 size={20} />
+                                            <div className="flex justify-between items-center mb-2 px-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" />
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                        Group: <span className="text-slate-800">{color.name}</span>
+                                                    </span>
+                                                </div>
+                                                <button type="button" onClick={() => removeColor(color.id)} className="text-slate-300 hover:text-red-500 transition-colors p-2">
+                                                    <Trash2 size={16} />
                                                 </button>
+                                            </div>
+
+                                            {/* Color Group Images */}
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Color Images (Shared by variants)</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {/* Existing Images for this color */}
+                                                    {(product.variantImages || [])
+                                                        .filter(vi => vi.variant.startsWith(`${color.name}-`))
+                                                        .flatMap(vi => vi.images)
+                                                        // Filter unique by src
+                                                        .filter((img, idx, self) => self.findIndex(t => t.src === img.src) === idx)
+                                                        .map((img, imgIdx) => (
+                                                            <div key={`existing-color-${imgIdx}`} className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200">
+                                                                <img src={img.src.startsWith('http') ? img.src : `${BASE_URL}${img.src}`} alt="product" className="w-full h-full object-cover" />
+                                                            </div>
+                                                        ))}
+                                                    {/* New Images */}
+                                                    {(colorImages[color.name] || []).map((file, imgIdx) => (
+                                                        <div key={`new-color-${imgIdx}`} className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-200 group/cimg">
+                                                            <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => removeColorImage(color.name, imgIdx)} 
+                                                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover/cimg:opacity-100 transition-all"
+                                                            >
+                                                                <X size={10} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <label className="w-12 h-12 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-brand-primary/30 transition-all text-slate-400">
+                                                        <Plus size={16} />
+                                                        <input 
+                                                            type="file" 
+                                                            multiple 
+                                                            hidden 
+                                                            onChange={(e) => handleColorImageChange(color.name, e.target.files)} 
+                                                        />
+                                                    </label>
+                                                </div>
                                             </div>
                                             <div className="relative group/size">
                                                 <input
@@ -576,8 +663,58 @@ const ProductForm = () => {
                                                     <input type="number" value={v.inventoryQty} onChange={(e) => updateVariant(v.color, v.size, "inventoryQty", e.target.value)} className="w-full p-3 bg-slate-50 rounded-xl text-xs font-black" />
                                                 </div>
                                             </div>
+
+                                            {/* Variant Images */}
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Variant Images</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {/* Existing Images */}
+                                                    {(product.variantImages || [])
+                                                        .find(vi => vi.variant === (v.variantKey || `${v.color}-${v.size}`))
+                                                        ?.images.map((img, imgIdx) => (
+                                                            <div key={`existing-${imgIdx}`} className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-100 group/img">
+                                                                <img src={img.src.startsWith('http') ? img.src : `${BASE_URL}${img.src}`} alt="product" className="w-full h-full object-cover" />
+                                                                <button 
+                                                                    type="button" 
+                                                                    onClick={() => removeExistingVariantImage(v.variantKey || `${v.color}-${v.size}`, imgIdx)} 
+                                                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover/img:opacity-100 transition-all shadow-lg"
+                                                                >
+                                                                    <X size={10} strokeWidth={3} />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    {/* New Images */}
+                                                    {(variantImages[v.variantKey || `${v.color}-${v.size}`] || []).map((file, imgIdx) => (
+                                                        <div key={`new-${imgIdx}`} className="relative w-12 h-12 rounded-xl overflow-hidden border border-slate-100 group/img">
+                                                            <img src={URL.createObjectURL(file)} alt="preview" className="w-full h-full object-cover" />
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => removeVariantImage(v.variantKey || `${v.color}-${v.size}`, imgIdx)} 
+                                                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover/img:opacity-100 transition-all shadow-lg"
+                                                            >
+                                                                <X size={10} strokeWidth={3} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <label className="w-12 h-12 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:border-brand-primary/30 hover:bg-brand-primary/5 transition-all text-slate-400 hover:text-brand-primary">
+                                                        <Plus size={16} />
+                                                        <input 
+                                                            type="file" 
+                                                            multiple 
+                                                            hidden 
+                                                            onChange={(e) => handleVariantImageChange(v.variantKey || `${v.color}-${v.size}`, e.target.files)} 
+                                                        />
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                     ))}
+                                    {product.variants.length === 0 && (
+                                        <div className="col-span-full text-center py-12 bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200">
+                                            <Layers className="mx-auto w-10 h-10 text-slate-300 mb-3" />
+                                            <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No variants generated yet</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -652,11 +789,24 @@ const ProductForm = () => {
                         <h3 className="text-lg font-black text-slate-800 tracking-tight">Status</h3>
                         <div className="flex flex-col gap-4">
                             <label className="flex items-center gap-3 cursor-pointer group">
-                                <div className={`w-12 h-6 rounded-full transition-all relative ${product.published ? 'bg-green-400' : 'bg-slate-200'}`}>
-                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${product.published ? 'left-7' : 'left-1'}`}></div>
+                                <div className={`w-12 h-6 rounded-full transition-all relative ${product.published ? 'bg-green-500 shadow-lg shadow-green-200' : 'bg-slate-200'}`}>
+                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${product.published ? 'left-7' : 'left-1'}`}></div>
                                 </div>
-                                <input type="checkbox" name="published" checked={product.published} onChange={handleChange} className="hidden" />
-                                <span className="text-xs font-black uppercase tracking-widest text-slate-600">Published</span>
+                                <input 
+                                    type="checkbox" 
+                                    name="published" 
+                                    checked={!!product.published} 
+                                    onChange={handleChange} 
+                                    className="sr-only" 
+                                />
+                                <div className="flex flex-col">
+                                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${product.published ? 'text-green-600' : 'text-slate-400'}`}>
+                                        {product.published ? 'Published' : 'Draft Mode'}
+                                    </span>
+                                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">
+                                        {product.published ? 'Visible to customers' : 'Hidden from shop'}
+                                    </span>
+                                </div>
                             </label>
                         </div>
                     </div>
